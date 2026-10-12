@@ -46,22 +46,12 @@ int main(void) {
     puts("connected to server");
 
     const char message[] = "Hello from client";
+    size_t message_size = sizeof(message);
 
+    send(client_fd, (void*)&message_size, sizeof(size_t), MSG_NOSIGNAL);
     ssize_t send_bytes = send(client_fd, message, sizeof(message), MSG_NOSIGNAL);
     if (send_bytes == -1) {
         perror("error while sending message to server");
-        exit(EXIT_FAILURE);
-    } else if (send_bytes == 0) {
-        puts("could not send any data");
-    } else {
-        printf("Sended %zd bytes\n", send_bytes);
-    }
-
-    const char exit_message[] = "exit";
-
-    send_bytes = send(client_fd, exit_message, sizeof(exit_message), MSG_NOSIGNAL);
-    if (send_bytes == -1) {
-        perror("error while sending exit_message to server");
         exit(EXIT_FAILURE);
     } else if (send_bytes == 0) {
         puts("could not send any data");
