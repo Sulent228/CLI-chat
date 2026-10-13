@@ -18,6 +18,7 @@ struct socket_s {
 	int fd;
 	struct sockaddr* addr;
 	socklen_t* socklen;
+	size_t needtoread;
 } socket_s;
 
 struct epoll_event events[10] = {0};
@@ -73,9 +74,12 @@ void client_event_handler(struct socket_s *client_s) {
 
 	int buffer[1024] = {0};
 
-	ssize_t got_data_size = read(client_fd, &buffer, sizeof(buffer));
+	if (client_s->needtoread == 0) {
+		read(client_fd, &client_s->needtoread, sizeof(size_t));
+		return;
+	}
 
-	printf("Got data from client: %zd\n", got_data_size);
+	int got_data_size = read(client_fd, &buffer, client_s->needtoread);
 	if (got_data_size == -1) { // error
 		perror("error while reading data from client_fd");
 	} else if (got_data_size == 0) { // client disconnected
