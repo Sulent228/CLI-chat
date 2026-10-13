@@ -76,7 +76,7 @@ void client_event_handler(struct socket_s *client_s) {
 
 	if (client_s->needtoread == 0) {
 		read(client_fd, &client_s->needtoread, sizeof(size_t));
-		return;
+		printf("need to read: %zd\n", client_s->needtoread);
 	}
 
 	int got_data_size = read(client_fd, &buffer, client_s->needtoread);
@@ -94,6 +94,7 @@ void client_event_handler(struct socket_s *client_s) {
 	} else { // getting data
 		buffer[got_data_size+1] = '\0';
 		printf("got data:\n%s\n", (char*)buffer);
+		client_s->needtoread = 0;
 	}
 }
 
@@ -167,13 +168,14 @@ int main(void) {
 	bool mustclose = 0;
 	while (!mustclose) {
 		int event_count =  epoll_wait(epfd, events, 10, 1000);
-		printf("events caused: %d\n", event_count);
+		if (event_count > 0) printf("events caused: %d\n", event_count);
 		for (int i = 0; i < event_count; i++) {
 			struct epoll_event event = events[i]; // getting current caused event
 			uint32_t event_events = event.events; // getting events
 			struct socket_s *event_data_pointer = event.data.ptr; // pointer to socket_s
 			int event_fd = event_data_pointer->fd; // file descriptor of socket
-			printf("event №%d caused %d from file descriptor %d\n", i, event_events, event_fd);
+			printf("event %d caused %d from file descriptor %d\n", i, event_events, event_fd);
+			// sleep(1);
 			if (event_events == EPOLLIN) {
 				if (event_fd == server_fd) {
 					server_event_handler();

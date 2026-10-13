@@ -45,19 +45,11 @@ int main(void) {
 
     puts("connected to server");
 
-    const char message[] = "Hello from client";
-    size_t message_size = sizeof(message);
-
-	send(client_fd, &message_size, sizeof(message_size), MSG_NOSIGNAL);
-    ssize_t send_bytes = send(client_fd, message, sizeof(message), MSG_NOSIGNAL);
-    if (send_bytes == -1) {
-        perror("error while sending message to server");
-        exit(EXIT_FAILURE);
-    } else if (send_bytes == 0) {
-        puts("could not send any data");
-    } else {
-        printf("Sended %zd bytes\n", send_bytes);
-    }
+	char buffer[1024];
+	while (strcmp(buffer, "exit") == 0) {
+		printf("waiting for input: ");
+		fgets(buffer, s);
+	}
 
     puts("exiting program");
 
