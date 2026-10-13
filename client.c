@@ -45,10 +45,31 @@ int main(void) {
 
     puts("connected to server");
 
-	char buffer[1024];
-	while (strcmp(buffer, "exit") == 0) {
+	char buffer[1024] = {0};
+	while (1) {
 		printf("waiting for input: ");
-		fgets(buffer, s);
+		char* input = fgets(buffer, sizeof(buffer)-1, stdin);
+
+        if (input == NULL) {
+            puts("error while reading input data");
+            continue;
+        }
+
+        if (strcmp(buffer, "exit") == 0) break;
+
+        size_t message_size = strlen(buffer)-1;
+        printf("message size: %zu\n", message_size);
+
+        if (message_size == 0) continue;
+
+        send(client_fd, &message_size, sizeof(size_t), MSG_NOSIGNAL);
+        ssize_t send_bytes = send(client_fd, buffer, message_size, MSG_NOSIGNAL);
+
+        if (send_bytes == -1) {
+            perror("error while sending message");
+            continue;
+        }
+        puts("successfuly send data");
 	}
 
     puts("exiting program");

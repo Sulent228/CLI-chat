@@ -16,19 +16,13 @@
 
 struct socket_s {
 	int fd;
-	struct sockaddr* addr;
+	struct sockaddr_in* addr;
 	socklen_t* socklen;
 	size_t needtoread;
 } socket_s;
 
 struct epoll_event events[10] = {0};
-int server_fd = -1;
 int epfd = -1;
-
-void close_fd() {
-	if (server_fd != -1) close(server_fd);
-	if (epfd != -1) close(epfd);
-}
 
 void socket_memory_free(struct socket_s* socket) {
 	if (socket == NULL) return;
@@ -98,44 +92,53 @@ void client_event_handler(struct socket_s *client_s) {
 	}
 }
 
-int main(void) {
-	atexit(close_fd);
-	// AF_INET - IPv4 ; SOCK_STREAM - TCP ; 0 - AUTO
-	// __domain its about choosing IPv4 or IPv6
-	// __type its about data transfering way
-	// __protocol its about socket protocol
-	server_fd = socket(AF_INET, SOCK_STREAM, 0);
-	if (server_fd == -1) {
+struct socket_s* server_s_initialization() {
+	struct socket_s *server_s = malloc(sizeof(struct socket_s));
+
+	server_s->fd = -1;
+	server_s->addr = malloc(sizeof(struct sockaddr_in));
+	server_s->socklen = malloc(sizeof(socklen_t));
+
+	server_s->fd = socket(AF_INET, SOCK_STREAM, 0);
+	if (server_s->fd == -1) {
 		perror("error while creating server_fd");
-		exit(EXIT_FAILURE);
+		return NULL;
 	}
 
 	puts("Created server_fd");
 
-	struct sockaddr_in server_addr = {0};
+	server_s->addr->sin_family = AF_INET;
+	server_s->addr->sin_port = htons(SERVER_PORT);
+	server_s->addr->sin_addr.s_addr = inet_addr(SERVER_ADDR);
 
-	server_addr.sin_family = AF_INET;
-	server_addr.sin_port = htons(SERVER_PORT);
-	server_addr.sin_addr.s_addr = inet_addr(SERVER_ADDR);
-
-	struct sockaddr *server_addr_p = (struct sockaddr*)&server_addr;
-	size_t server_addr_size = sizeof(server_addr);
-
-	int bind_status = bind(server_fd, server_addr_p, server_addr_size);
+	int bind_status = bind(server_s->fd, (struct sockaddr*)server_s->addr, *server_s->socklen);
 	if (bind_status == -1) {
 		perror("error while binding server_fd");
-		exit(EXIT_FAILURE);
+		return NULL;
 	}
 
 	puts("Binded server_fd");
+	return server_s;
+}
 
-	int listen_status = listen(server_fd, LISTEN_BACKLOG);
-	if (listen_status == -1) {
-		perror("error while turning server_fd to listen state");
+int main(void) {
+	// AF_INET - IPv4 ; SOCK_STREAM - TCP ; 0 - AUTO
+	// __domain its about choosing IPv4 or IPv6
+	// __type its about data transfering way
+	// __protocol its about socket protocol
+	struct socket_s *server_s = server_s_initialization();
+	if (server_s == NULL) {
+		perror("could not initialize server");
 		exit(EXIT_FAILURE);
 	}
 
-	puts("Turned server_fd to listen state");
+	int listen_status = listen(server_s->fd, LISTEN_BACKLOG);
+	if (listen_status == -1) {
+		perror("error while turning server to listen state");
+		exit(EXIT_FAILURE);
+	}
+
+	puts("Turned server to listen state");
 
 	epfd = epoll_create1(0);
 	if (epfd == -1) {
