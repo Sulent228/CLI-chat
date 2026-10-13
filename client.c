@@ -1,9 +1,9 @@
-#include <sys/epoll.h>  // Основной заголовок epoll
-#include <unistd.h>     // Для close() (чтобы закрывать дескрипторы)
-#include <fcntl.h>      // Для настройки флагов сокета (например, O_NONBLOCK)
-#include <stdio.h>      // Для printf и perror
-#include <stdlib.h>     // Для exit
-#include <string.h>     // Для работы с памятью
+#include <sys/epoll.h>  
+#include <unistd.h>
+#include <fcntl.h>
+#include <stdio.h>                            
+#include <stdlib.h>                                    
+#include <string.h>  
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -48,7 +48,7 @@ int main(void) {
     const char message[] = "Hello from client";
     size_t message_size = sizeof(message);
 
-    send(client_fd, (void*)&message_size, sizeof(size_t), MSG_NOSIGNAL);
+	send(client_fd, &message_size, sizeof(message_size), MSG_NOSIGNAL);
     ssize_t send_bytes = send(client_fd, message, sizeof(message), MSG_NOSIGNAL);
     if (send_bytes == -1) {
         perror("error while sending message to server");
